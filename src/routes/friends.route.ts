@@ -1,6 +1,6 @@
 /*
 TODO: Discuss points on: 
--Type Safety '@ts-ignore' and 'unknown' defeat use of typescript. 
+-
 -Check recursion logic; Are repeated network calls being made? If so either batch them or cache them or maybe add some sort of depth limit.
  **Dont think pagiantion is gonna help here as the external friends route isnt set up for pagination in the route.**
  - Check variable names; using 'friend' alot. Be more descriptive in naming(e.g., friendList, friendNode, friendTree) would make the code easier to follow.
@@ -53,17 +53,19 @@ export const friendsRoute: RequestHandler = async (req, res) => {
       visitedFriends.add(friend.id);
 
       const friends = (
-        await axios.get(
+        await axios.get( // [3] - '@ts-ignore' and 'unknown' not type safe. use of typescript.  
+        // type the Axios response data instead of using 'unknown', so that TypeScript knows it is an array of '{ id: string; name: string }', 
+        // then remove the unkown type
           `${EXTERNAL_FRIENDS_SERVICE_BASE_URL}/external-friends-service?userId=${friend.id}`
         )
-      ).data as unknown;
+      ).data as unknown; // so write as ```.data  as { id: string; name: string }[];``` or even better, create an interface for the user object and use that instead.
 
-      //[3] - NOTE: Avoid using the 'ts-ignore' line, think about what interface for types we can add and use. 
+  
       const friendNode: FriendsTreeNode = {
         id: friend.id,
         name: friend.name,
-        // @ts-ignore
-        friends: await getFriendsRecursively(await friends),
+      // @ts-ignore - see [3].
+        friends: await getFriendsRecursively(await friends), 
       };
 
       friendsTree.push(friendNode);
